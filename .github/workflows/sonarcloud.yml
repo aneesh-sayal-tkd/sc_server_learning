@@ -38,3 +38,37 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: onetakeda_my-sonar-cube-project
           SONAR_ORGANIZATION: oneTakeda
+
+      - name: Generate sonar.json report
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+        run: |
+          SONAR_API="https://sonarcloud.io/api"
+      
+          curl -s -u "${SONAR_TOKEN}:" \
+              "${SONAR_API}/issues/search?componentKeys=${SONAR_PROJECT_KEY}&ps=500" \
+              -o "issues.json"
+      
+          curl -s -u "${SONAR_TOKEN}:" \
+              "${SONAR_API}/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}" \
+              -o "quality_gate.json"
+      
+          curl -s -u "${SONAR_TOKEN}:" \
+              "${SONAR_API}/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=coverage,line_coverage,duplicated_lines_density,ncloc,complexity" \
+              -o "measures.json"
+      
+          jq -s '{
+            timestamp: now,
+            issues: .[0].issues,
+            quality_gate: .[1].projectStatus,
+            metrics: .[2].component.measures
+          }' issues.json quality_gate.json measures.json > sonar.json
+
+      - name: Upload sonar.json report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-json-report
+          path: sonar.json
+        
