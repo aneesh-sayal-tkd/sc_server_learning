@@ -34,5 +34,5 @@ jobs:
           projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: my-sonar-cube_project
+          SONAR_PROJECT_KEY: onetakeda_my-sonar-cube-project
           SONAR_ORGANIZATION: oneTakeda
