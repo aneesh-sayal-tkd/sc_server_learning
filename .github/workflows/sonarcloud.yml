@@ -47,6 +47,8 @@ jobs:
           SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
         run: |
           SONAR_API="https://sonarcloud.io/api"
+
+          sudo apt-get update && sudo apt-get install -y jq
       
           curl -s -u "${SONAR_TOKEN}:" \
               "${SONAR_API}/issues/search?componentKeys=${SONAR_PROJECT_KEY}&ps=500" \
