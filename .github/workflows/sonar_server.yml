@@ -1,4 +1,4 @@
-name: Static Analysis with Local SonarQube (Docker)
+name: Static Analysis with SonarQube (Manual Docker)
 
 on:
   push:
@@ -7,17 +7,6 @@ on:
 jobs:
   sonarqube-scan:
     runs-on: ubuntu-latest
-
-    services:
-      sonarqube:
-        image: sonarqube:9.9-community
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd="curl --silent --fail http://localhost:9000/api/system/health | grep -q '"status":"GREEN"'"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
 
     steps:
       - name: Checkout repository
@@ -36,10 +25,22 @@ jobs:
           echo "SONAR_SCANNER_HOME=/opt/sonar-scanner" >> $GITHUB_ENV
           echo "/opt/sonar-scanner/bin" >> $GITHUB_PATH
 
-      - name: Wait for SonarQube to be healthy
+      - name: Start SonarQube (Docker)
+        run: |
+          docker run -d --name sonarqube \
+            -p 9000:9000 \
+            sonarqube:9.9-community
+
+      - name: Wait for SonarQube to be ready
         run: |
           echo "Waiting for SonarQube..."
-          until curl -s http://localhost:9000/api/system/health | grep -q '"status":"GREEN"'; do
+          for i in {1..30}; do
+            STATUS=$(curl -s http://localhost:9000/api/system/health | jq -r .status)
+            if [[ "$STATUS" == "GREEN" ]]; then
+              echo "SonarQube is ready!"
+              break
+            fi
+            echo "SonarQube not ready yet (status=$STATUS), retrying..."
             sleep 5
           done
 
