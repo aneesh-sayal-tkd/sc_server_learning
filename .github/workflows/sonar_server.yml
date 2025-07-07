@@ -29,6 +29,8 @@ jobs:
       - name: Start SonarQube (Docker)
         run: |
           docker run -d --name sonarqube \
+            -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+            -e SONAR_WEB_JVM_OPTS="-Dsonar.security.realm=none" \
             -p 9000:9000 \
             sonarqube:9.9-community
 
