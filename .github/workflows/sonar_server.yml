@@ -46,14 +46,13 @@ jobs:
           done
 
       - name: Run Sonar Scanner
-        env:
-          SONAR_TOKEN: admin
         run: |
           sonar-scanner \
             -Dsonar.projectKey=my-local-project \
+            -Dsonar.projectName=my-local-project \
             -Dsonar.sources=src \
             -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=${SONAR_TOKEN} \
+            -Dsonar.login=admin \
             -Dsonar.python.coverage.reportPaths=coverage.xml || true
 
       - name: Install jq
@@ -61,12 +60,10 @@ jobs:
 
       - name: Generate sonar.json report
         if: always()
-        env:
-          SONAR_TOKEN: admin
         run: |
-          curl -s -u ${SONAR_TOKEN}: http://localhost:9000/api/issues/search?componentKeys=my-local-project > issues.json
-          curl -s -u ${SONAR_TOKEN}: http://localhost:9000/api/qualitygates/project_status?projectKey=my-local-project > quality_gate.json
-          curl -s -u ${SONAR_TOKEN}: http://localhost:9000/api/measures/component?component=my-local-project&metricKeys=coverage,line_coverage,duplicated_lines_density,ncloc,complexity > measures.json
+          curl -s -u admin: http://localhost:9000/api/issues/search?componentKeys=my-local-project > issues.json
+          curl -s -u admin: http://localhost:9000/api/qualitygates/project_status?projectKey=my-local-project > quality_gate.json
+          curl -s -u admin: http://localhost:9000/api/measures/component?component=my-local-project&metricKeys=coverage,line_coverage,duplicated_lines_density,ncloc,complexity > measures.json
 
           jq -s '{
             timestamp: now,
@@ -81,3 +78,14 @@ jobs:
         with:
           name: sonar-local-json-report
           path: sonar.json
+
+      - name: Fail if Sonar issues found
+        if: always()
+        run: |
+          ISSUE_COUNT=$(jq '.issues | length' sonar.json)
+          if [ "$ISSUE_COUNT" -gt 0 ]; then
+            echo "❌ SonarQube found $ISSUE_COUNT issues"
+            exit 1
+          else
+            echo "✅ No issues found by SonarQube"
+          fi
