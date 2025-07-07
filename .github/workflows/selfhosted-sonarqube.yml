@@ -32,14 +32,16 @@ jobs:
           docker run -d --name sonarqube \
             -p 9000:9000 \
             -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+            -e SONAR_SEARCH_JAVAADDITIONALOPTS=-Xmx512m \
+            -e SONAR_CE_JAVAADDITIONALOPTS=-Xmx512m \
+            -e SONAR_WEB_JAVAADDITIONALOPTS=-Xmx512m \
             sonarqube:9.9-community
 
-      - name: Wait for SonarQube to be healthy
+      - name: Check SonarQube is responding
         run: |
-          echo "Waiting for SonarQube..."
-          until curl -s http://localhost:9000/api/system/health | grep -q '"status":"GREEN"'; do
-            sleep 5
-          done
+          echo "Checking if SonarQube API responds (this does not guarantee full readiness)..."
+          sleep 20
+          curl -s http://localhost:9000/api/system/status || true
 
       - name: Download and configure SonarScanner
         run: |
@@ -62,7 +64,7 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Generate Sonar Scan Report
+      - name: Generate SonarQube report
         env:
           SONAR_TOKEN: "admin"
         run: |
@@ -100,7 +102,12 @@ jobs:
           name: bandit-report
           path: bandit.json
 
-      - name: Stop SonarQube container
+      - name: Dump SonarQube logs on failure
+        if: failure()
+        run: docker logs sonarqube || true
+
+      - name: Stop and remove SonarQube container
         if: always()
         run: |
-          docker stop sonarqube && docker rm sonarqube
+          docker stop sonarqube
+          docker rm sonarqube
