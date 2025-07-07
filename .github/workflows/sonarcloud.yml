@@ -40,6 +40,7 @@ jobs:
           SONAR_ORGANIZATION: oneTakeda
 
       - name: Generate sonar.json report
+        if: always()
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
