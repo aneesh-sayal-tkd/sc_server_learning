@@ -4,6 +4,5 @@ def buggy_function():
     if True == True:  # redundant condition
         print("Always true!")
 
-    print("Code smells are cool!")
-
+    print("Code smells are cool!")  # Aneesh wrote this code!    
 buggy_function()
